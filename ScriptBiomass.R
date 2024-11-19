@@ -3,14 +3,14 @@
 ################################################################################
 # Load necessary libraries
 #install_github("umr-amap/BIOMASS")
-library(devtools)
+#library(devtools)
 library(BIOMASS)
 
 # Set the working directory to the folder containing the data file
 setwd("D:/KhaoYai_Biomass/")
 
 # Read data
-Census_allplot <- read.csv("Data/All_Census2017_2022_KhaoYai_SC.CSV")
+Census_allplot <- read.csv("Data/All_Census2017-2022_KhaoYai.csv")
 str(Census_allplot)
 
 # New column with stage of each plot and change MST --> OGS stage)
@@ -18,8 +18,8 @@ Census_allplot$Stage = substr(Census_allplot$Plot, start = 1, stop = 3)
 Census_allplot$Stage[Census_allplot$Plot=="MST30ha"] <- "OGS"
 
 # Keep only individuals > 5 cm dbh and remove NA 
-Census_allplot_sub <- Census_allplot[Census_allplot$DBH_C2017 >= 5 & !is.na(Census_allplot$DBH_C2017),]
-summary(Census_allplot_sub$DBH_C2017)
+Census_allplot_sub <- Census_allplot[Census_allplot$DBH_Cen2017 >= 5 & !is.na(Census_allplot$DBH_Cen2017),]
+summary(Census_allplot_sub$DBH_Cen2017)
 
 # Check typo in taxonomy
 genspcorr = correctTaxo(Census_allplot_sub$GenusSpecies,useCache=TRUE)
@@ -49,12 +49,12 @@ Calculate_Hpred <- function(Stage, dbh) {
   }
 }
 #Use function 
-Census_allplot_sub$Hpred <- mapply(Calculate_Hpred, Census_allplot_sub$Stage, Census_allplot_sub$DBH_C2017)
+Census_allplot_sub$Hpred <- mapply(Calculate_Hpred, Census_allplot_sub$Stage, Census_allplot_sub$DBH_Cen2017)
 summary(Census_allplot_sub$Hpred)
 
 
 # Estimate AGB 
-Census_allplot_sub$AGB=computeAGB(D = Census_allplot_sub$DBH_C2017, 
+Census_allplot_sub$AGB=computeAGB(D = Census_allplot_sub$DBH_Cen2017, 
                                   WD = Census_allplot_sub$meanWD, 
                                   H = Census_allplot_sub$Hpred)
 
@@ -65,7 +65,7 @@ Res$AGBperha=Res$AGB/0.04
 
 #### AGBmonteCarlo ####
 resultMC <- AGBmonteCarlo(
-  D = Census_allplot_sub$DBH_C2017, WD = Census_allplot_sub$meanWD, 
+  D = Census_allplot_sub$DBH_Cen2017, WD = Census_allplot_sub$meanWD, 
   errWD = Census_allplot_sub$sdWD, H=Census_allplot_sub$Hpred,errH=0
 )
 str(resultMC)
