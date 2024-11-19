@@ -7,10 +7,10 @@ library(devtools)
 library(BIOMASS)
 
 # Set the working directory to the folder containing the data file
-setwd("D:/KhaoYai_Biomass_LiDAR/")
+setwd("D:/KhaoYai_Biomass/")
 
 # Read data
-Census_allplot <- read.csv("Data/All_Census2017-2022_KhaoYai.csv")
+Census_allplot <- read.csv("Data/All_Census2017_2022_KhaoYai_SC.CSV")
 str(Census_allplot)
 
 # New column with stage of each plot and change MST --> OGS stage)
@@ -48,7 +48,6 @@ Calculate_Hpred <- function(Stage, dbh) {
     return(NA)
   }
 }
-
 #Use function 
 Census_allplot_sub$Hpred <- mapply(Calculate_Hpred, Census_allplot_sub$Stage, Census_allplot_sub$DBH_C2017)
 summary(Census_allplot_sub$Hpred)
