@@ -148,18 +148,30 @@ plot_division_0.25ha = DividePlot(coord, grid_size = 50, Census_allplot_sub)
 # The function returns a list containing 2 elements : 
 corner_subplot_0.25ha <- plot_division_0.25ha$sub_corner_coord
 tree_subplot_0.25ha <- plot_division_0.25ha$tree_df
+
+##### Summarising tree metrics #####
+#source("~/BIOMASS/R/subplot_summary.R")
+
+subplots_0.25ha <- subplot_summary(subplots = plot_division_0.25ha, value = "AGB")
+
+# By defaut, the summary is the sum :
+AGB0.25ha = subplots_0.25ha$polygon
 ##################################################################################
 ##Use function for SIS4 plot (9 subplots = 0.25 ha)
+
 #plot_division_SIS4 = DividePlot(coord[coord$Plot=="SIS4",], 
 #                                grid_size = 46.66, 
 #                                Census_allplot_sub[Census_allplot_sub$Plot=="SIS4",])
-## The function returns a list containing 2 elements : 
-#corner_subplot_SIS4 <- plot_division_SIS4$sub_corner_coord
-#tree_subplot_SIS4 <- plot_division_SIS4$tree_df
+
+##### Summarising tree metrics #####
+#subplots_SIS4 <- subplot_summary(subplots = plot_division_SIS4, value = "AGB")
 
 ## The function returns a list containing 2 elements : 
-#corner_subplot_0.25ha = rbind(corner_subplot_0.25ha, corner_subplot_SIS4)
-#tree_subplot_0.25ha <- rbind(tree_subplot_0.25ha, tree_subplot_SIS4)
+#corner_subplot_0.25ha = rbind(corner_subplot_0.25ha, plot_division_SIS4$sub_corner_coord)
+#tree_subplot_0.25ha <- rbind(tree_subplot_0.25ha, plot_division_SIS4$tree_df)
+
+## By defaut, the summary is the sum :
+#AGB0.25ha = rbind(AGB0.25ha, subplots_SIS4$polygon)
 ##################################################################################
 
 ##Use function for all plot (1 ha)
@@ -180,8 +192,10 @@ plot_names <- t(plot_names)
 plot_names <- as.data.frame(plot_names)
 plot_names$Plot <- rownames(plot_names)
 
+
 corner_subplot_list <- list()
 tree_subplot_list <- list()
+subplots_list <- list()
 
 # Loop over each plot name
 for (i in 1:length(plot_names$Plot)) {
@@ -195,21 +209,36 @@ for (i in 1:length(plot_names$Plot)) {
   
   corner_subplot_list[[i]] <- plot_division$sub_corner_coord
   tree_subplot_list[[i]] <- plot_division$tree_df
-} 
   
+  subplots_list[[i]] <- subplot_summary(subplots = plot_division, value = "AGB")
+} 
+
 # Combine results into data frames
-corner_subplot_df <- do.call(rbind, corner_subplot_list)
-tree_subplot_df <- do.call(rbind, tree_subplot_list)
+corner_subplot_1ha <- do.call(rbind, corner_subplot_list)
+tree_subplot_1ha <- do.call(rbind, tree_subplot_list)
+# By defaut, the summary is the sum :
+AGB1ha <- do.call(rbind, lapply(subplots_list, function(x) x$polygon))
+################################################################################
+## Save polygon as shape file for analyse CHM metrics 
+library(sf)
+
+st_crs(AGB0.25ha) <- 32647
+st_crs(AGB1ha) <- 32647
+
+st_write(AGB0.25ha,"Output/polygons_res0.25ha.shp", delete_layer = TRUE)
+st_write(AGB1ha,"Output/polygons_res1ha.shp", delete_layer = TRUE)
 
 ################################################################################
+################################################################################
+################################################################################
+
 ##### Summarising tree metrics #####
 
 #source("~/BIOMASS/R/subplot_summary.R")
-
-subplots <- subplot_summary(subplots = plot_division_0.25ha, value = "AGB")
+#subplots_0.25ha <- subplot_summary(subplots = plot_division_0.25ha, value = "AGB")
 
 # By defaut, the summary is the sum :
-AGB0.25ha = subplots$tree_summary
+#AGB0.25ha = subplots_0.25ha$tree_summary
 
 # But you can supply any function you want (even your own function) : 
 # subplots <- subplot_summary(subplots = plot_division ,

@@ -1,0 +1,12 @@
+<PAMDataset>
+  <PAMRasterBand band="1">
+    <Description>totCHM</Description>
+    <Metadata>
+      <MDI key="STATISTICS_MAXIMUM">737.28582763672</MDI>
+      <MDI key="STATISTICS_MEAN">274.57728374432</MDI>
+      <MDI key="STATISTICS_MINIMUM">0.0013857904123142</MDI>
+      <MDI key="STATISTICS_STDDEV">102.54617263268</MDI>
+      <MDI key="STATISTICS_VALID_PERCENT">97.84</MDI>
+    </Metadata>
+  </PAMRasterBand>
+</PAMDataset>
