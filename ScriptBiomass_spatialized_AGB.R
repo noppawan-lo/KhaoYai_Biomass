@@ -10,7 +10,7 @@ library(BIOMASS)
 #setwd("D:/KhaoYai_Biomass/")
 
 # Read data
-Census_allplot <- read.csv("Data/All_Census2017-2022_KhaoYai.csv")
+Census_allplot <- read.csv("Data/All_Census_KhaoYai.csv")
 str(Census_allplot)
 
 # New column with stage of each plot and change MST --> OGS stage)
@@ -69,9 +69,12 @@ resultMC <- AGBmonteCarlo(
 )
 str(resultMC)
 
+Census_allplot_sub$PX <- as.numeric(Census_allplot_sub$PX)
+Census_allplot_sub$PY <- as.numeric(Census_allplot_sub$PY)
+str(Census_allplot_sub)
+
 # Save data in order to load these data in a new script :
 save(Census_allplot_sub , file = "Output/AGB_calculate.RData")
-
 ################################################################################
 ### Spatialized AGB 
 ################################################################################
@@ -83,7 +86,7 @@ load("Output/AGB_calculate.RData")
 coord <- read.csv(file = "Data/Corner_allplots.csv")
 
 # Excluding SIS4 and SIS5 because there are no trees associated in Census_allplot_sub
-coord <- coord[ ! coord$Plot %in% c("SIS4","SIS5"),]
+#coord_SIS4 <- coord[coord$Plot %in% c("SIS4"),]
 
 # Split the data by plots in order to apply the check_plot_coord() function
 split_coord <- split(coord , f = coord$Plot)
@@ -95,13 +98,14 @@ range(OGS1_coord$X_loc)
 range(OGS1_coord$Y_loc)
 
 OGS1_trees <- Census_allplot_sub[Census_allplot_sub$Plot=="OGS1",]
-range(OGS1_trees$PX2)
-range(OGS1_trees$PY2)
+range(OGS1_trees$PX)
+range(OGS1_trees$PY)
 ### !!! There has been an inversion of X and Y axis (either on the corner coordinates, or on the tree data frame)
 
 # Let's suppose that the inversion has been made on the trees (but not for MST plot) :
-Census_allplot_sub[Census_allplot_sub$Plot!="MST", c("PX2","PY2")] <- Census_allplot_sub[Census_allplot_sub$Plot!="MST", c("PY2","PX2")]
+#Census_allplot_sub[Census_allplot_sub$Plot!="MST", c("PX2","PY2")] <- Census_allplot_sub[Census_allplot_sub$Plot!="MST", c("PY2","PX2")]
 
+par(mfrow=c(2,2))
 res_check <- lapply(split_coord , function(dat) { #dat = split_coord[[1]] for an example
   print(unique(dat$Plot))
   check_plot <- check_plot_coord(
@@ -109,7 +113,7 @@ res_check <- lapply(split_coord , function(dat) { #dat = split_coord[[1]] for an
     rel_coord = dat[c("X_loc","Y_loc")], 
     trust_GPS_corners = FALSE, 
     tree_df = Census_allplot_sub[Census_allplot_sub$Plot==unique(dat$Plot),], 
-    tree_coords = c("PX2","PY2")
+    tree_coords = c("PX","PY")
   )
 })
 
@@ -134,7 +138,7 @@ DividePlot = function (coord,grid_size,dat){
     corner_plot_ID = coord$Plot,
     grid_tol = 0.5, # =0.1 by defaut, so we increase it to 0.5 : if more than 50% of the plot area is not include in the grid area, it returns an error
     tree_df = dat,
-    tree_coords = c("PX2","PY2"),
+    tree_coords = c("PX","PY"),
     tree_plot_ID = dat$Plot,
     )
 }
@@ -156,22 +160,30 @@ subplots_0.25ha <- subplot_summary(subplots = plot_division_0.25ha, value = "AGB
 
 # By defaut, the summary is the sum :
 AGB0.25ha = subplots_0.25ha$polygon
+AGB0.25ha$Stage = substr(AGB0.25ha$subplot_id, start = 1, stop = 3)
+AGB0.25ha$Stage[AGB0.25ha$Stage=="MST"] <- "OGS"
+
+##Cut SIS4 because not 50*50 m
+AGB0.25ha <- AGB0.25ha[!AGB0.25ha$subplot_id %in% c("SIS4_0_0","SIS4_0_1","SIS4_1_0","SIS4_1_1"),]
 ##################################################################################
 ##Use function for SIS4 plot (9 subplots = 0.25 ha)
 
-#plot_division_SIS4 = DividePlot(coord[coord$Plot=="SIS4",], 
-#                                grid_size = 46.66, 
-#                                Census_allplot_sub[Census_allplot_sub$Plot=="SIS4",])
+plot_division_SIS4 = DividePlot(coord[coord$Plot=="SIS4",], 
+                                grid_size = 46.66, 
+                                Census_allplot_sub[Census_allplot_sub$Plot=="SIS4",])
 
 ##### Summarising tree metrics #####
-#subplots_SIS4 <- subplot_summary(subplots = plot_division_SIS4, value = "AGB")
+subplots_SIS4 <- subplot_summary(subplots = plot_division_SIS4, value = "AGB")
 
 ## The function returns a list containing 2 elements : 
-#corner_subplot_0.25ha = rbind(corner_subplot_0.25ha, plot_division_SIS4$sub_corner_coord)
-#tree_subplot_0.25ha <- rbind(tree_subplot_0.25ha, plot_division_SIS4$tree_df)
+corner_subplot_0.25ha = rbind(corner_subplot_0.25ha, plot_division_SIS4$sub_corner_coord)
+tree_subplot_0.25ha <- rbind(tree_subplot_0.25ha, plot_division_SIS4$tree_df)
 
 ## By defaut, the summary is the sum :
-#AGB0.25ha = rbind(AGB0.25ha, subplots_SIS4$polygon)
+AGB0.25ha_SIS4 = subplots_SIS4$polygon
+AGB0.25ha_SIS4$Stage = substr(AGB0.25ha_SIS4$subplot_id, start = 1, stop = 3)
+
+AGB0.25ha = rbind(AGB0.25ha, AGB0.25ha_SIS4)
 ##################################################################################
 
 ##Use function for all plot (1 ha)
@@ -218,6 +230,12 @@ corner_subplot_1ha <- do.call(rbind, corner_subplot_list)
 tree_subplot_1ha <- do.call(rbind, tree_subplot_list)
 # By defaut, the summary is the sum :
 AGB1ha <- do.call(rbind, lapply(subplots_list, function(x) x$polygon))
+AGB1ha$Stage = substr(AGB1ha$subplot_id, start = 1, stop = 3)
+AGB1ha$Stage[AGB1ha$Stage=="MST"] <- "OGS"
+
+##View AGB
+subplots_list[[10]]
+subplots_list[[12]]
 ################################################################################
 ## Save polygon as shape file for analyse CHM metrics 
 library(sf)
