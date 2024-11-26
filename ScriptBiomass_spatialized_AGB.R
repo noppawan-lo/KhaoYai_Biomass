@@ -80,6 +80,7 @@ save(Census_allplot_sub , file = "Output/AGB_calculate.RData")
 ################################################################################
 # Load necessary libraries
 library(ggplot2)
+library(BIOMASS)
 
 # Load data
 load("Output/AGB_calculate.RData")
@@ -105,7 +106,7 @@ range(OGS1_trees$PY)
 # Let's suppose that the inversion has been made on the trees (but not for MST plot) :
 #Census_allplot_sub[Census_allplot_sub$Plot!="MST", c("PX2","PY2")] <- Census_allplot_sub[Census_allplot_sub$Plot!="MST", c("PY2","PX2")]
 
-par(mfrow=c(2,2))
+#par(mfrow=c(2,2))
 res_check <- lapply(split_coord , function(dat) { #dat = split_coord[[1]] for an example
   print(unique(dat$Plot))
   check_plot <- check_plot_coord(
@@ -118,13 +119,35 @@ res_check <- lapply(split_coord , function(dat) { #dat = split_coord[[1]] for an
 })
 
 # There's a warning message telling us that some trees are not inside the plot -> it concerns the plot MST !
-
+################################################################################
 # Adding projected coordinates to the tree data.frame
 # for one plot, we got the projected coordinates in check_plot$tree_proj_coord.
 # So for all plots, we have to loop over res_check, extract $tree_proj_coord, and then rbind the list
 tree_projected_coord <- do.call(rbind,lapply(res_check , function(x) x$tree_proj_coord ))
-Census_allplot_sub[c("X_UTM","Y_UTM")] <- tree_projected_coord
+#Census_allplot_sub[c("X_UTM","Y_UTM")] <- tree_projected_coord
 
+tree_projected_coord$Plot <- rownames(tree_projected_coord)
+tree_projected_coord$Plot = substr(tree_projected_coord$Plot, start = 1, stop = 4)
+tree_projected_coord$Plot[tree_projected_coord$Plot=="MST."]<- "MST"
+
+plot_names = unique(tree_projected_coord$Plot)
+
+all_trees <- data.frame()
+
+# Loop through each plot name
+
+for (i in 1:length(plot_names)) {
+  
+  pos <- tree_projected_coord[tree_projected_coord$Plot == plot_names[i], ]
+  tree <- Census_allplot_sub[Census_allplot_sub$Plot == plot_names[i], ]
+  
+  tree[c("X_UTM", "Y_UTM")] <- pos
+    
+  all_trees <- rbind(all_trees, tree)
+}
+
+write.csv(all_trees, "Output/Tree_position.csv")
+################################################################################
 ##### Dividing plots into subplots #####
 
 # You can apply the function to all the plot but the grid dimensions will be the same for all the plots :
@@ -143,7 +166,7 @@ DividePlot = function (coord,grid_size,dat){
     )
 }
 #Use function for 50x50 m (all plots)
-plot_division_0.25ha = DividePlot(coord, grid_size = 50, Census_allplot_sub)
+plot_division_0.25ha = DividePlot(coord, grid_size = c(50,50), Census_allplot_sub)
 
 # The first 16 warning messages tell us that the dimensions of the grid does not fit perfectly the dimensions of the plots, but its OK
 # The 17th warning message tell us that some trees are not assigned to a subplot :
@@ -152,6 +175,10 @@ plot_division_0.25ha = DividePlot(coord, grid_size = 50, Census_allplot_sub)
 # The function returns a list containing 2 elements : 
 corner_subplot_0.25ha <- plot_division_0.25ha$sub_corner_coord
 tree_subplot_0.25ha <- plot_division_0.25ha$tree_df
+
+##Cut SIS4 because not 50*50 m
+corner_subplot_0.25ha <- corner_subplot_0.25ha[!corner_subplot_0.25ha$subplot_id %in% c("SIS4_0_0","SIS4_0_1","SIS4_1_0","SIS4_1_1"),]
+tree_subplot_0.25ha <- tree_subplot_0.25ha[!tree_subplot_0.25ha$subplot_id %in% c("SIS4_0_0","SIS4_0_1","SIS4_1_0","SIS4_1_1"),]
 
 ##### Summarising tree metrics #####
 #source("~/BIOMASS/R/subplot_summary.R")
@@ -169,7 +196,7 @@ AGB0.25ha <- AGB0.25ha[!AGB0.25ha$subplot_id %in% c("SIS4_0_0","SIS4_0_1","SIS4_
 ##Use function for SIS4 plot (9 subplots = 0.25 ha)
 
 plot_division_SIS4 = DividePlot(coord[coord$Plot=="SIS4",], 
-                                grid_size = 46.66, 
+                                grid_size = c(46.66, 46.66),
                                 Census_allplot_sub[Census_allplot_sub$Plot=="SIS4",])
 
 ##### Summarising tree metrics #####
@@ -243,8 +270,8 @@ library(sf)
 st_crs(AGB0.25ha) <- 32647
 st_crs(AGB1ha) <- 32647
 
-st_write(AGB0.25ha,"Output/polygons_res0.25ha.shp", delete_layer = TRUE)
-st_write(AGB1ha,"Output/polygons_res1ha.shp", delete_layer = TRUE)
+st_write(AGB0.25ha,"Output/AGBplots_0.25ha.shp", delete_layer = TRUE)
+st_write(AGB1ha,"Output/AGBplots_1ha.shp", delete_layer = TRUE)
 
 ################################################################################
 ################################################################################
