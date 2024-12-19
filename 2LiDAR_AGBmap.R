@@ -10,13 +10,15 @@ library(terra)
 #First load the LiDAR canopy heigh model (CHM):
 CHMlidar2017 = rast("E:/ALS_processing2017/02_processed/CHM_comb/CHM2017.tif")
 #CHMlidar2017 = rast("E:/ALS_processing2017/02_processed/CHM_comb/CHM_pitfree2017.tif")
-CHMlidar[CHMlidar2017<0]=0
+CHMlidar2017[CHMlidar2017<0]=0
 plot(CHMlidar2017)
 
 CHMlidar2024 = rast("E:/ALS_processing2024/02_processed/CHM_comb/totCHM.tif")
 #CHMlidar2024 = rast("E:/ALS_processing2024/02_processed/CHM_comb/CHM_pitfree.tif")
 CHMlidar2024[CHMlidar2024<0]=0
 plot(CHMlidar2024)
+
+#par(mfrow = c(1, 2))
 
 #Crop CHM
 CHMlidar2024 = crop(CHMlidar2024,CHMlidar2017)
@@ -45,12 +47,12 @@ CHM_metrics <- function(AGBplots, CHMlidar) {
   return(AGBplots)  # Return the updated data
 }
 #Use function
-AGBplots_0.25ha <- CHM_metrics(AGBplots_0.25ha, CHMlidar)
-AGBplots_1ha <- CHM_metrics(AGBplots_1ha, CHMlidar)
+AGBplots_0.25ha <- CHM_metrics(AGBplots_0.25ha, CHMlidar2017)
+AGBplots_1ha <- CHM_metrics(AGBplots_1ha, CHMlidar2017)
 ################################################################################
 #Check relationship between LiDAR and field AGB estimates
 #png("Output/AGBfield_LiDARmetrics_lm.png", width = 4000, height = 3000, res = 400)
-#par(mfrow = c(2, 2))
+par(mfrow = c(2, 2))
 
 plot(AGB_ha ~ meanTCH, data = AGBplots_0.25ha, #log = "xy", 
      xlab = "Mean TCH (m)", ylab = "Field AGB (Mg/ha)", pch = 20, 
@@ -151,11 +153,14 @@ rse=summary(mod)$sigma
 ##Apply the model to the whole CHM
 FunPredAGB=function(x) exp(mod$coefficients[1]+0.5*rse^2+mod$coefficients[2]*log(x))
 
-Rast_TCHm=aggregate(CHMlidar,100,mean,na.rm=T)
-Rast_TCHm_2024=aggregate(CHMlidar2024,100,mean,na.rm=T)
+Rast_TCHm=aggregate(CHMlidar2017,50,mean,na.rm=T)
+Rast_TCHm_2024=aggregate(CHMlidar2024,50,mean,na.rm=T)
 
 AGBmap = lapp(Rast_TCHm, fun = FunPredAGB)
 AGBmap_2024 = lapp(Rast_TCHm_2024, fun = FunPredAGB)
+
+summary(AGBmap$totCHM)
+summary(AGBmap_2024$totCHM)
 
 par(mfrow = c(1, 2))
 plot(AGBmap,plg=list(title='Predicted AGB\n(Mg/ha)', title.cex=0.9))

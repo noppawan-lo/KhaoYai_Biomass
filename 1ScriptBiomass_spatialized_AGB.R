@@ -10,12 +10,14 @@ library(BIOMASS)
 #setwd("D:/KhaoYai_Biomass/")
 
 # Read data
-Census_allplot <- read.csv("Data/All_Census_KhaoYai.csv")
+#Census_allplot <- read.csv("Data/All_Census_KhaoYai.csv")
+Census_allplot=read.csv("Data/All_Census_KhaoYai.csv",na.strings = c("NA","#VALUE!"))
+
 str(Census_allplot)
 
-Census_allplot$PX <- as.numeric(Census_allplot$PX)
-Census_allplot$PY <- as.numeric(Census_allplot$PY)
-str(Census_allplot)
+#Census_allplot$PX <- as.numeric(Census_allplot$PX)
+#Census_allplot$PY <- as.numeric(Census_allplot$PY)
+#str(Census_allplot)
 
 # New column with stage of each plot and change MST --> OGS stage)
 Census_allplot$Stage = substr(Census_allplot$Plot, start = 1, stop = 3)
@@ -69,11 +71,11 @@ Census_allplot_sub$AGB=computeAGB(D = Census_allplot_sub$DBH_Cen2017,
 #Res_Quadrat$AGBperha=Res_Quadrat$AGB/0.04
 
 #### AGBmonteCarlo ####
-resultMC <- AGBmonteCarlo(
-  D = Census_allplot_sub$DBH_Cen2017, WD = Census_allplot_sub$meanWD, 
-  errWD = Census_allplot_sub$sdWD, H=Census_allplot_sub$Hpred,errH=0
-)
-str(resultMC)
+#resultMC <- AGBmonteCarlo(
+#  D = Census_allplot_sub$DBH_Cen2017, WD = Census_allplot_sub$meanWD, 
+#  errWD = Census_allplot_sub$sdWD, H=Census_allplot_sub$Hpred,errH=0
+#)
+#str(resultMC)
 
 # Save data in order to load these data in a new script :
 save(Census_allplot_sub , file = "Output/AGB_calculate.RData")
@@ -148,12 +150,11 @@ for (i in 1:length(plot_names)) {
   all_trees <- rbind(all_trees, tree)
 }
 Census_allplot_sub=all_trees
-write.csv(all_trees, "Output/Tree_position_alltree.csv")
+#write.csv(all_trees, "Output/Tree_position_alltree.csv")
 ################################################################################
 ##### Dividing plots into subplots #####
 
 # You can apply the function to all the plot but the grid dimensions will be the same for all the plots :
-Census_allplot_sub=all_trees
 DividePlot = function (coord,grid_size,dat){
   
   plot_division <- divide_plot(

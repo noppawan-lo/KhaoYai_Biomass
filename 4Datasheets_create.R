@@ -49,25 +49,73 @@ Tree_MST_SIS4_1ha = Tree_MST_SIS4_1ha[!is.na(Tree_MST_SIS4_1ha$subplot_id),]
 
 #Combine data
 Tree_1ha = rbind(Tree_MST_SIS4_1ha,Tree_second_1ha)
+
+Tree_1ha_MST = Tree_1ha[Tree_1ha$Plot=="MST",]
+Tree_1ha_other = Tree_1ha[Tree_1ha$Plot!="MST",]
+
+Tree_1ha_MST$Tree_Tag <- Tree_1ha_MST$Tag
+Tree_1ha_other$Tree_Tag <- sapply(strsplit(Tree_1ha_other$Tag, "_"), function(x) paste(x[-1], collapse = "_"))
+
+Tree_1ha = rbind(Tree_1ha_MST,Tree_1ha_other)
 ################################################################################
 
-Plotnames = unique(Tree_1ha$subplot_id)
+Plotnames = data.frame(subplot_id = unique(Tree_1ha$subplot_id))
+Plotnames$Stage = substr(Plotnames$subplot_id, start = 1, stop = 3)
+Plotnames$Stage[Plotnames$Stage=="MST"] <- "OGS"
 
+Plotnames_OGS_SES = Plotnames[Plotnames$Stage!="SIS",]
+Plotnames_SIS = Plotnames[Plotnames$Stage=="SIS",]
+
+library(tidyverse)
 library(writexl)
+library(openxlsx)
+
 # Loop through all unique subplot IDs
-for (plot_id in Plotnames) {
+for (plot_id in Plotnames_OGS_SES$subplot_id) {
+  
   data <- Tree_1ha %>% filter(subplot_id == plot_id) %>%
     mutate(DBH_2024 = NA, Status = NA, Note = NA)
   
-  data5 <- data[!data$DBH_Cen2022<5,]
+  dataNA <- data %>% filter(is.na(DBH_Cen2022))
+  
+  data10 <- data[!data$DBH_Cen2022<9,]
+  data10 = data10[!is.na(data10$subplot_id),]
+  
+  data10 = rbind(data10,dataNA)
+  
+  wb <- createWorkbook()
+  
+  # Add sheets and write data to them
+  addWorksheet(wb, "9cm")
+  writeData(wb, "9cm", data10)
+  
+  addWorksheet(wb, "1cm")
+  writeData(wb, "1cm", data)
+
+  # Save the workbook
+  saveWorkbook(wb, file = paste0("Recensus_Sheets/", plot_id, ".xlsx"), overwrite = TRUE)
+}
+
+# Loop through all unique subplot IDs
+for (plot_id in Plotnames_SIS$subplot_id) {
+  data <- Tree_1ha %>% filter(subplot_id == plot_id) %>%
+    mutate(DBH_2024 = NA, Status = NA, Note = NA)
+  
+  dataNA <- data %>% filter(is.na(DBH_Cen2022))
+  
+  data5 <- data[!data$DBH_Cen2022<7,]
   data5 = data5[!is.na(data5$subplot_id),]
   
-  data10 <- data[!data$DBH_Cen2022<10,]
-  data10 = data10[!is.na(data10$subplot_id),]
-
-  # Write each file
-  write_xlsx(data, paste0("Recensus_Sheets/1 cm/", plot_id, ".xlsx"))
-  write_xlsx(data5, paste0("Recensus_Sheets/5 cm/", plot_id, ".xlsx"))
-  write_xlsx(data10, paste0("Recensus_Sheets/10 cm/", plot_id, ".xlsx"))
+  wb <- createWorkbook()
+  
+  # Add sheets and write data to them
+  addWorksheet(wb, "7cm")
+  writeData(wb, "7cm", data5)
+  
+  addWorksheet(wb, "1cm")
+  writeData(wb, "1cm", data)
+  
+  # Save the workbook
+  saveWorkbook(wb, file = paste0("Recensus_Sheets/", plot_id, ".xlsx"), overwrite = TRUE)
 }
 ################################################################################
