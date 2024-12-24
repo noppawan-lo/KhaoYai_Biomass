@@ -10,28 +10,21 @@ library(BIOMASS)
 #setwd("D:/KhaoYai_Biomass/")
 
 # Read data
-#Census_allplot <- read.csv("Data/All_Census_KhaoYai.csv")
-Census_allplot=read.csv("Data/All_Census_KhaoYai.csv",na.strings = c("NA","#VALUE!"))
+#Census_allplot_sub=read.csv("Data/All_Census_KhaoYai_clean_5cm.csv",na.strings = c("NA","#VALUE!"))
+Census_allplot_sub=read.csv("Data/All_Census_KhaoYai_clean_5cm_2022.csv",na.strings = c("NA","#VALUE!"))
 
-str(Census_allplot)
-
-#Census_allplot$PX <- as.numeric(Census_allplot$PX)
-#Census_allplot$PY <- as.numeric(Census_allplot$PY)
-#str(Census_allplot)
+str(Census_allplot_sub)
 
 # New column with stage of each plot and change MST --> OGS stage)
-Census_allplot$Stage = substr(Census_allplot$Plot, start = 1, stop = 3)
-Census_allplot$Stage[Census_allplot$Plot=="MST"] <- "OGS"
-
-#Census_allplot_sub <- Census_allplot[Census_allplot$PX >= 0 & !is.na(Census_allplot$PX),]
-#Census_allplot_sub <- Census_allplot[Census_allplot$PY >= 0 & !is.na(Census_allplot$PY),]
+Census_allplot_sub$Stage = substr(Census_allplot_sub$Plot, start = 1, stop = 3)
+Census_allplot_sub$Stage[Census_allplot_sub$Plot=="MST"] <- "OGS"
 
 # Keep only individuals > 5 cm dbh and remove NA 
-Census_allplot_sub <- Census_allplot[Census_allplot$DBH_Cen2017 >= 5 & !is.na(Census_allplot$DBH_Cen2017),]
+#Census_allplot_sub <- Census_allplot[Census_allplot$DBH_Cen2017 >= 5 & !is.na(Census_allplot$DBH_Cen2017),]
 summary(Census_allplot_sub$DBH_Cen2017)
 
 # Check typo in taxonomy
-genspcorr = correctTaxo(Census_allplot_sub$GenusSpecies,useCache=TRUE)
+genspcorr = correctTaxo(Census_allplot_sub$GenusSpecies)#,useCache=TRUE)
 filt=genspcorr$nameModified=="TRUE"
 unique(cbind(Census_allplot_sub$GenusSpecies[filt],genspcorr[filt,]))
 Census_allplot_sub$GenusCorr=genspcorr$genusCorrected
@@ -62,7 +55,7 @@ summary(Census_allplot_sub$Hpred)
 
 
 # Estimate AGB 
-Census_allplot_sub$AGB=computeAGB(D = Census_allplot_sub$DBH_Cen2017, 
+Census_allplot_sub$AGB=computeAGB(D = Census_allplot_sub$DBH_Cen2022, 
                                   WD = Census_allplot_sub$meanWD, 
                                   H = Census_allplot_sub$Hpred)
 
@@ -78,7 +71,7 @@ Census_allplot_sub$AGB=computeAGB(D = Census_allplot_sub$DBH_Cen2017,
 #str(resultMC)
 
 # Save data in order to load these data in a new script :
-save(Census_allplot_sub , file = "Output/AGB_calculate.RData")
+save(Census_allplot_sub , file = "Output/AGB_calculate_2022.RData")
 ################################################################################
 ### Spatialized AGB 
 ################################################################################

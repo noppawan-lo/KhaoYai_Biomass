@@ -20,7 +20,7 @@ plot(CHMlidar2024)
 
 #par(mfrow = c(1, 2))
 
-#Crop CHM
+#Crop CHM 2024 = 2017
 CHMlidar2024 = crop(CHMlidar2024,CHMlidar2017)
 CHMlidar2024 = mask(CHMlidar2024,CHMlidar2017)
 plot(CHMlidar2024)
@@ -51,7 +51,7 @@ AGBplots_0.25ha <- CHM_metrics(AGBplots_0.25ha, CHMlidar2017)
 AGBplots_1ha <- CHM_metrics(AGBplots_1ha, CHMlidar2017)
 ################################################################################
 #Check relationship between LiDAR and field AGB estimates
-#png("Output/AGBfield_LiDARmetrics_lm.png", width = 4000, height = 3000, res = 400)
+#png("Output/AGBfield_LiDARmetrics_lm_new.png", width = 4000, height = 3000, res = 400)
 par(mfrow = c(2, 2))
 
 plot(AGB_ha ~ meanTCH, data = AGBplots_0.25ha, #log = "xy", 
@@ -133,7 +133,7 @@ AGB_plot <- function(AGBplots_dat, title) {
   abline(a=0,b=1)
 }
 
-#png("Output/AGBfield_AGBpred.png", width = 4000, height = 3000, res = 400)
+#png("Output/AGBfield_AGBpred_new.png", width = 4000, height = 3000, res = 400)
 par(mfrow = c(2, 2))
 ##Use function
 AGB_plot(AGBpred_meanTCH_0.25ha, "0.25 ha (mean TCH)")
@@ -221,7 +221,8 @@ Mean <- global(AGBmapdif, fun = "mean", na.rm = TRUE)[1, 1]
 
 png("Output/AGB_predit_dif.png", width = 3000, height = 1500, res = 300)
 par(mfrow=c(1,2))
-plot(AGBmapdif,plg=list(title='Predicted AGB\n(Mg/ha)', title.cex=0.9))
+#plot(AGBmapdif, plg=list(title='Predicted AGB\n(Mg/ha)', title.cex=0.9))
+plot(AGBmapdif,col = colors, plg=list(title='Predicted AGB\n(Mg/ha)', title.cex=0.9))
 hist_data <- hist(AGBmapdif$totCHM, breaks = 20,# Number of bins
                   main = "Histogram of AGB predict difference", 
                   xlab = "Predicted AGB (Mg/ha)")
@@ -230,4 +231,73 @@ text(x = Mean+80, y = max(hist_data$counts) + 20,  # Position the text above the
      labels = paste("Mean:", round(Mean, 2)), col = "red", cex = 0.9)
 dev.off()
 
-################################################################################
+###################################################################################
+###################################################################################
+###################################################################################
+library(raster)
+library(fields)
+
+#Define common color scale
+vmin <- 0      # Minimum value
+vmax <- 800    # Maximum value
+colors <- terrain.colors(100)  # Define a shared color palette
+
+#Save plot as PNG
+png("Output/AGB_predit_0.25res.png", width = 3000, height = 1500, res = 300)
+
+#Layout for two plots
+par(mfrow = c(1, 2), mar = c(4, 4, 2, 10), oma =c(0, 0, 0, 5))  # Increase the right margin for the legend
+
+#Plot 2017 AGB map
+plot(AGBmap,
+     main = "2017",
+     col = colors,
+     zlim = c(vmin, vmax),
+     legend = FALSE)  # Suppress default legend
+
+#Plot 2024 AGB map
+plot(AGBmap_2024,
+     main = "2024",
+     col = colors,
+     zlim = c(vmin, vmax),
+     legend = FALSE)  # Suppress default legend
+
+#Add custom legend for both plots
+par(new = TRUE, oma = c(0, 0, 0, 0))
+image.plot(legend.only = TRUE,
+           zlim = c(vmin, vmax),
+           col = colors,
+           horizontal = FALSE,
+           legend.args = list(
+             text = "Predicted AGB\n(Mg/ha)",
+             side = 4,
+             font = 2,
+             line = 8,  # เพิ่มค่า line เพื่อขยับข้อความออกไปทางซ้าย
+             cex = 1))  # ขยายขนาดข้อความ
+#Turn off the device to save the file
+dev.off()
+
+#Save plot as PNG
+png("Output/AGB_predit_0.25resHis.png", width = 3000, height = 1500, res = 300)
+#Layout for two plots
+par(mfrow = c(1, 2))
+
+Mean <- global(AGBmap, fun = "mean", na.rm = TRUE)[1, 1]
+hist_data <- hist(AGBmap$totCHM, breaks = 20,# Number of bins
+                  main = "Histogram of AGB predict in 2017", 
+                  xlab = "Predicted AGB (Mg/ha)")
+abline(v = Mean, col = "red", lwd = 2, lty = 2) 
+text(x = Mean+400, y = max(hist_data$counts) + 20,  # Position the text above the tallest bar
+     labels = paste("Mean:", round(Mean, 2)), col = "red", cex = 0.9)
+
+Mean <- global(AGBmap_2024, fun = "mean", na.rm = TRUE)[1, 1]
+hist_data <- hist(AGBmap_2024$totCHM, breaks = 20,# Number of bins
+                  main = "Histogram of AGB predict in 2024", 
+                  xlab = "Predicted AGB (Mg/ha)")
+abline(v = Mean, col = "red", lwd = 2, lty = 2) 
+text(x = Mean+400, y = max(hist_data$counts) + 20,  # Position the text above the tallest bar
+     labels = paste("Mean:", round(Mean, 2)), col = "red", cex = 0.9)
+
+dev.off()
+###################################################################################
+###################################################################################
